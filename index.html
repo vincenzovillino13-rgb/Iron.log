@@ -43,7 +43,7 @@ a{color:#4f8}
 .setInd{background:#252527;padding:12px;border-radius:10px;margin:10px 0;text-align:center;font-size:17px;font-weight:600}
 .nextSet{background:#1e2a1e;color:#4f8;padding:10px;border-radius:8px;margin-top:10px;text-align:center;font-size:14px;font-weight:600}
 .nextSet.last{background:#3a2c1e;color:#fa5}
-.qItem{padding:10px;border-radius:8px;margin:4px 0;background:#252527;display:flex;justify-content:space-between;align-items:center;font-size:15px}
+.qItem{padding:10px;border-radius:8px;margin:4px 0;background:#252527;display:flex;justify-content:space-between;align-items:center;font-size:14px}
 .qItem.cur{background:#1e3a2a;border:1px solid #4f8;font-weight:600}
 .qItem.dn{opacity:0.6}
 </style>
@@ -64,7 +64,7 @@ a{color:#4f8}
    <div class="row"><b id="detTitle"></b><button onclick="closeR()">← Indietro</button></div>
    <div class="row"><button onclick="delR(OPEN)">🗑 Elimina scheda</button><button onclick="startS(OPEN)">▶ Allenati</button></div>
    <hr>
-   <label>Cerca esercizio (scrivi: petto, panca, calf…)</label><input id="exN" placeholder="es. petto" oninput="sugg()" autocomplete="off"><div id="suggList"></div>
+   <label>Cerca esercizio (scrivi: petto, yoga, crossfit…)</label><input id="exN" placeholder="es. petto" oninput="sugg()" autocomplete="off"><div id="suggList"></div>
    <div class="row3"><div><label>Serie</label><input id="exS" type="number" value="3"></div><div><label>Ripetizioni</label><input id="exP" type="number" value="8"></div><div><label>Carico (kg)</label><input id="exW" type="number" step="0.5" value="20"></div></div>
    <div class="row3"><div><label>Riposo (sec)</label><input id="exRe" type="number" value="90"></div><div><label>Tempo esecuzione (sec)</label><input id="exT" type="number" value="0"></div></div>
    <button onclick="addE()">+ Aggiungi esercizio</button>
@@ -81,9 +81,10 @@ a{color:#4f8}
 </section>
 
 <section id="v-archivio" class="view" hidden>
- <div class="card"><label>Cerca esercizio o macchina</label><input id="q" placeholder="es. panca, calf, petto…" oninput="rArch()">
+ <div class="card"><label>Cerca esercizio o macchina</label><input id="q" placeholder="es. panca, calf, yoga…" oninput="rArch()">
+ <label>Filtra per gruppo</label><select id="fg" onchange="rArch()"><option value="">Tutti</option><option>petto</option><option>schiena</option><option>spalle</option><option>bicipiti</option><option>tricipiti</option><option>gambe</option><option>polpacci</option><option>addome</option><option>stretching</option><option>crossfit</option><option>calisthenics</option><option>pilates</option><option>yoga</option></select>
  <button onclick="tog('newExForm')">📷 Nuovo esercizio con foto</button>
- <div id="newExForm" hidden><label>Nome esercizio / macchina</label><input id="nxN"><label>Gruppo muscolare</label><select id="nxG"><option>petto</option><option>schiena</option><option>spalle</option><option>bicipiti</option><option>tricipiti</option><option>gambe</option><option>polpacci</option><option>addome</option><option>altro</option></select><label>Come si esegue (testo)</label><textarea id="nxD"></textarea><label>Video (link, opzionale)</label><input id="nxV" placeholder="https://…"><label>Foto della macchina</label><input id="nxF" type="file" accept="image/*" capture="environment"><button onclick="saveEx()">💾 Salva</button></div></div>
+ <div id="newExForm" hidden><label>Nome esercizio / macchina</label><input id="nxN"><label>Gruppo muscolare</label><select id="nxG"><option>petto</option><option>schiena</option><option>spalle</option><option>bicipiti</option><option>tricipiti</option><option>gambe</option><option>polpacci</option><option>addome</option><option>stretching</option><option>crossfit</option><option>calisthenics</option><option>pilates</option><option>yoga</option><option>altro</option></select><label>Come si esegue (testo)</label><textarea id="nxD"></textarea><label>Video (link, opzionale)</label><input id="nxV" placeholder="https://…"><label>Foto della macchina</label><input id="nxF" type="file" accept="image/*" capture="environment"><button onclick="saveEx()">💾 Salva</button></div></div>
  <div id="listArch"></div>
 </section>
 
@@ -110,41 +111,129 @@ const esc=s=>String(s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;',
 const fmtS=s=>Math.floor(Math.max(s,0)/60)+':'+String(Math.max(s,0)%60).padStart(2,'0');
 const fmt=d=>new Date(d).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'})+' '+new Date(d).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
 const tog=id=>{$('#'+id).hidden=!$('#'+id).hidden};
-const EX_DB=[["Panca piana","petto","Sdraiato su panca, bilanciere al petto, spingi fino a braccia tese."],["Panca inclinata manubri","petto","Panca a 30°, manubri al petto, spingi verso l'alto."],["Croci ai cavi","petto","Braccia aperte, chiudi verso il centro."],["Piegamenti","petto","Mani a terra, scendi col petto, risali."],["Lat machine","schiena","Seduto, tira la sbarra verso il petto."],["Rematore bilanciere","schiena","Busto flesso, tira il bilanciere all'addome."],["Trazioni","schiena","Appeso alla sbarra, tira fino al mento."],["Pulley","schiena","Seduto, tira la maniglia all'addome."],["Military press","spalle","Bilanciere dalle spalle sopra la testa."],["Alzate laterali","spalle","Manubri ai fianchi, sali a braccia tese."],["Alzate posteriori","spalle","Busto flesso, apri le braccia."],["Curl manubri","bicipiti","Gomiti fermi, piega le braccia."],["Curl bilanciere","bicipiti","Bilanciere, gomiti fermi, piega."],["Martelli","bicipiti","Presa neutra, piega le braccia."],["French press","tricipiti","Gomiti alti, estendi le braccia."],["Push down","tricipiti","Al cavo, spingi verso il basso."],["Dip","tricipiti","Scendi e risali alle parallele."],["Squat","gambe","Bilanciere sulle spalle, scendi come seduto."],["Pressa","gambe","Piedi sulla pedana, piega e spingi."],["Affondi","gambe","Passo avanti, scendi col ginocchio."],["Stacchi rumeni","gambe","Bilanciere lungo le gambe, busto avanti."],["Calf in piedi","polpacci","Sali sulle punte."],["Calf seduto","polpacci","Seduto, spingi sulle punte."],["Crunch","addome","Solleva le spalle da terra."],["Leg raise","addome","Solleva le gambe tese."],["Plank","addome","Gomiti a terra, corpo dritto."]].map(a=>({n:a[0],g:a[1],d:a[2]}));
+const vid=n=>'https://www.youtube.com/results?search_query='+encodeURIComponent(n+' esercizio esecuzione');
+const POSES={
+stand:{h:[50,16],t:[[50,24],[50,55]],a:[[[50,28],[42,48]],[[50,28],[58,48]]],l:[[[50,55],[45,90]],[[50,55],[55,90]]],p:[[20,92,80,92]]},
+press:{h:[50,20],t:[[50,28],[50,58]],a:[[[50,32],[44,14]],[[50,32],[56,14]]],l:[[[50,58],[45,90]],[[50,58],[55,90]]],p:[[34,10,66,10]]},
+standlat:{h:[50,16],t:[[50,24],[50,55]],a:[[[50,28],[28,28]],[[50,28],[72,28]]],l:[[[50,55],[45,90]],[[50,55],[55,90]]],p:[[20,92,80,92]]},
+curl:{h:[50,16],t:[[50,24],[50,55]],a:[[[50,28],[44,44],[44,30]],[[50,28],[56,44],[56,30]]],l:[[[50,55],[45,90]],[[50,55],[55,90]]],p:[[20,92,80,92]]},
+panca:{h:[22,50],t:[[28,56],[58,56]],a:[[[38,56],[38,38]],[[50,56],[50,38]]],l:[[[58,56],[70,70],[70,88]],[[58,56],[78,72],[84,88]]],p:[[12,62,88,62],[28,32,60,32]]},
+pushup:{h:[76,50],t:[[70,55],[42,64]],a:[[[64,57],[64,80]]],l:[[[42,64],[16,80]]],p:[[8,82,92,82]]},
+plank:{h:[76,52],t:[[70,57],[42,66]],a:[[[64,59],[62,76],[74,80]]],l:[[[42,66],[16,80]]],p:[[8,82,92,82]]},
+lat:{h:[50,24],t:[[50,32],[50,68]],a:[[[50,36],[42,20]],[[50,36],[58,20]]],l:[[[50,68],[64,76],[64,90]],[[50,68],[40,76],[40,90]]],p:[[30,12,70,12],[26,72,74,72]]},
+row:{h:[32,38],t:[[38,44],[62,54]],a:[[[44,46],[46,62]],[[52,50],[54,66]]],l:[[[62,54],[60,90]],[[62,54],[70,88]]],p:[[20,92,85,92],[36,66,58,70]]},
+hinge:{h:[30,40],t:[[36,46],[60,56]],a:[[[40,48],[38,72]]],l:[[[60,56],[58,90]],[[60,56],[68,88]]],p:[[20,92,85,92],[30,74,48,74]]},
+hang:{h:[50,26],t:[[50,34],[50,62]],a:[[[50,36],[44,12]],[[50,36],[56,12]]],l:[[[50,62],[46,86]],[[50,62],[54,86]]],p:[[20,10,80,10]]},
+squat:{h:[50,28],t:[[50,36],[50,60]],a:[[[50,40],[72,40]]],l:[[[50,60],[38,72],[38,90]],[[50,60],[62,72],[62,90]]],p:[[36,34,64,34],[20,92,80,92]]},
+lunge:{h:[50,22],t:[[50,30],[50,58]],a:[[[50,34],[46,52]],[[50,34],[54,52]]],l:[[[50,58],[66,70],[66,90]],[[50,58],[34,74],[26,88]]],p:[[20,92,80,92]]},
+calf:{h:[50,16],t:[[50,24],[50,55]],a:[[[50,28],[42,48]],[[50,28],[58,48]]],l:[[[50,55],[46,82]],[[50,55],[54,82]]],p:[[20,86,80,86]]},
+crunch:{h:[28,48],t:[[33,55],[52,62]],a:[[[40,57],[46,50]]],l:[[[52,62],[66,48],[66,78]]],p:[[8,80,92,80]]},
+legraise:{h:[24,60],t:[[30,64],[54,66]],a:[[[30,64],[20,70]]],l:[[[54,66],[80,42]],[[54,66],[78,48]]],p:[[8,80,92,80]]},
+bridge:{h:[24,66],t:[[30,68],[50,58]],a:[[[30,68],[20,76]]],l:[[[50,58],[62,78],[62,88]],[[50,58],[72,70],[80,88]]],p:[[8,88,92,88]]},
+seatedfold:{h:[38,44],t:[[43,50],[50,68]],a:[[[46,54],[72,64]]],l:[[[50,68],[86,68]]],p:[[8,80,92,80]]},
+quad:{h:[50,16],t:[[50,24],[50,55]],a:[[[50,28],[58,48],[56,70]]],l:[[[50,55],[50,90]],[[50,55],[58,74],[50,88]]],p:[[20,92,80,92]]},
+cobra:{h:[70,44],t:[[64,52],[44,70]],a:[[[60,56],[62,78]]],l:[[[44,70],[14,78]]],p:[[8,80,92,80]]},
+downdog:{h:[26,58],t:[[30,62],[52,40]],a:[[[30,62],[20,80]]],l:[[[52,40],[78,78]]],p:[[8,82,92,82]]},
+handstand:{h:[50,76],t:[[50,68],[50,40]],a:[[[50,68],[44,90]],[[50,68],[56,90]]],l:[[[50,40],[46,12]],[[50,40],[54,12]]],p:[[20,92,80,92]]},
+tree:{h:[50,14],t:[[50,22],[50,55]],a:[[[50,26],[46,8]],[[50,26],[54,8]]],l:[[[50,55],[50,90]],[[50,55],[63,60],[52,70]]],p:[[20,92,80,92]]},
+dip:{h:[50,22],t:[[50,30],[50,60]],a:[[[50,34],[28,42]],[[50,34],[72,42]]],l:[[[50,60],[46,84]],[[50,60],[54,84]]],p:[[26,40,26,90],[74,40,74,90]]}};
+function figSVG(p){const P=POSES[p]||POSES.stand;let s='<svg class="eximg" viewBox="0 0 100 100"><circle cx="'+P.h[0]+'" cy="'+P.h[1]+'" r="6" fill="none" stroke="#4f8" stroke-width="3"/>';
+const L=a=>'<polyline fill="none" stroke="#4f8" stroke-width="3" stroke-linecap="round" points="'+a.map(q=>q.join(',')).join(' ')+'"/>';
+s+=L(P.t);P.a.forEach(x=>s+=L(x));P.l.forEach(x=>s+=L(x));(P.p||[]).forEach(x=>s+='<line x1="'+x[0]+'" y1="'+x[1]+'" x2="'+x[2]+'" y2="'+x[3]+'" stroke="#555" stroke-width="3"/>');
+return s+'</svg>'}
+const GP={petto:'panca',schiena:'row',spalle:'press',bicipiti:'curl',tricipiti:'press',gambe:'squat',polpacci:'calf',addome:'crunch',stretching:'seatedfold',crossfit:'pushup',calisthenics:'hang',pilates:'legraise',yoga:'tree',altro:'stand'};
+const EX_DB=[
+["Panca piana","petto","Sdraiato su panca, bilanciere al petto, spingi verso l'alto.","panca"],
+["Panca inclinata manubri","petto","Panca a 30°, manubri al petto, spingi in alto.","panca"],
+["Croci ai cavi","petto","Braccia aperte ai cavi, chiudi davanti al petto.","panca"],
+["Piegamenti","petto","Mani a terra, corpo dritto, scendi col petto e risali.","pushup"],
+["Chest press macchina","petto","Seduto, spingi le maniglie avanti fino a braccia tese.","panca"],
+["Pullover manubrio","petto","Sdraiato, manubrio sopra il petto, portalo dietro la testa.","panca"],
+["Lat machine","schiena","Seduto, tira la sbarra verso il petto controllando la salita.","lat"],
+["Rematore bilanciere","schiena","Busto flesso, tira il bilanciere verso l'addome.","row"],
+["Trazioni","schiena","Appeso alla sbarra, tira fino al mento sopra la sbarra.","hang"],
+["Pulley basso","schiena","Seduto, gambe piegate, tira la maniglia all'addome.","lat"],
+["Stacchi da terra","schiena","Bilanciere a terra, schiena dritta, alzati spingendo sulle gambe.","hinge"],
+["Face pull","schiena","Al cavo alto, tira verso la faccia aprendo i gomiti.","standlat"],
+["Military press","spalle","In piedi, bilanciere dalle spalle sopra la testa.","press"],
+["Alzate laterali","spalle","Manubri ai fianchi, alza le braccia tese fino alle spalle.","standlat"],
+["Alzate posteriori","spalle","Busto flesso, apri le braccia con i manubri.","row"],
+["Arnold press","spalle","Manubri dalle spalle, ruota e spingi sopra la testa.","press"],
+["Curl manubri","bicipiti","Gomiti fermi ai fianchi, piega le braccia.","curl"],
+["Curl bilanciere","bicipiti","Bilanciere in mano, gomiti fermi, piega.","curl"],
+["Curl a martello","bicipiti","Presa neutra, palmi affrontati, piega le braccia.","curl"],
+["Panca Scott","bicipiti","Gomiti appoggiati al supporto, piega il bilanciere.","curl"],
+["French press","tricipiti","Manubrio dietro la testa, estendi le braccia in alto.","press"],
+["Push down al cavo","tricipiti","Gomiti fermi ai fianchi, spingi la sbarra in basso.","curl"],
+["Dip alle parallele","tricipiti","Scendi con le spalle sotto i gomiti, risali.","dip"],
+["Kickback","tricipiti","Busto flesso, gomito alto, estendi il braccio dietro.","row"],
+["Squat","gambe","Bilanciere sulle spalle, scendi come per sederti, risali.","squat"],
+["Pressa","gambe","Piedi sulla pedana, piega le gambe e spingi.","squat"],
+["Affondi","gambe","Passo avanti, scendi fino al ginocchio vicino a terra.","lunge"],
+["Stacchi rumeni","gambe","Gambe semitese, bilanciere lungo le cosce, busto avanti.","hinge"],
+["Leg extension","gambe","Seduto, estendi le gambe fino a tese.","lat"],
+["Hip thrust","gambe","Schiena su panca, bilanciere sul bacino, solleva il bacino.","bridge"],
+["Calf in piedi","polpacci","In piedi sulla pedana, sali sulle punte.","calf"],
+["Calf seduto","polpacci","Seduto con peso sulle ginocchia, solleva i talloni.","calf"],
+["Crunch","addome","Mani al petto, solleva le spalle da terra.","crunch"],
+["Leg raise","addome","Sdraiato, solleva le gambe tese fino a 90°.","legraise"],
+["Plank","addome","Gomiti a terra, corpo dritto, contrai l'addome.","plank"],
+["Russian twist","addome","Seduto inclinato, ruota il busto a destra e sinistra.","crunch"],
+["Allungamento seduto","stretching","Seduto gambe tese, raggiungi le punte dei piedi.","seatedfold"],
+["Stretching quadricipiti","stretching","In piedi, porta il tallone al gluteo.","quad"],
+["Stretching pettorali","stretching","Braccio al muro, ruota il busto dal lato opposto.","standlat"],
+["Cobra","stretching","Prono, mani a terra, solleva il busto.","cobra"],
+["Cane a testa in giù","stretching","Mani e piedi a terra, solleva il bacino a V.","downdog"],
+["Farfalla","stretching","Seduto, piante dei piedi unite, spingi le ginocchia giù.","seatedfold"],
+["Burpees","crossfit","Squat, salto indietro in plank, piegamento, salto in alto.","pushup"],
+["Kettlebell swing","crossfit","Oscilla il kettlebell tra le gambe e fino al petto coi fianchi.","hinge"],
+["Box jump","crossfit","Salta sul box atterrando morbido in mezzo squat.","squat"],
+["Wall ball","crossfit","Squat profondo e lancia la palla al muro.","press"],
+["Thruster","crossfit","Squat e military press in un movimento unico.","press"],
+["Vogatore","crossfit","Spingi con le gambe e tira il remo al petto.","lat"],
+["Pull up","calisthenics","Trazioni a presa larga, controllo totale.","hang"],
+["Muscle up","calisthenics","Trazione esplosiva fino a salire sopra la sbarra.","hang"],
+["Handstand","calisthenics","Verticale sulle mani, corpo allineato.","handstand"],
+["Pistol squat","calisthenics","Squat su una gamba sola, l'altra tesa avanti.","squat"],
+["Dip parallele","calisthenics","Scendi profondo e risali sulle parallele.","dip"],
+["L-sit","calisthenics","Appeso alle parallele, gambe tese sollevate a L.","legraise"],
+["The Hundred","pilates","Supino, gambe a 45°, braccia che pulsano, testa su.","legraise"],
+["Roll up","pilates","Sali vertebra per vertebra fino a seduto.","crunch"],
+["Single leg stretch","pilates","Supino, testa su, alterna le gambe al petto.","legraise"],
+["Swimming","pilates","Prono, solleva braccia e gambe e alternale.","cobra"],
+["Bridge","pilates","Supino, solleva il bacino strizzando i glutei.","bridge"],
+["Guerriero I","yoga","Affondo lungo, braccia al cielo, busto eretto.","lunge"],
+["Albero","yoga","In piedi su una gamba, piede alla coscia interna, mani unite in alto.","tree"],
+["Cane a testa in giù","yoga","V rovesciata, talloni verso terra, testa tra le braccia.","downdog"],
+["Cobra","yoga","Prono, apri il petto guardando avanti.","cobra"],
+["Posizione del bambino","yoga","In ginocchio, busto avanti, braccia distese.","seatedfold"]
+].map(a=>({n:a[0],g:a[1],d:a[2],f:a[3]}));
 const allEx=()=>EX_DB.concat(S.custom);
-function bodySVG(g){const f=x=>x===g?'#4f8':'#3a3a3c';const arm=(g==='bicipiti'||g==='tricipiti')?'#4f8':'#3a3a3c';
-return '<svg class="eximg" viewBox="0 0 60 100"><circle cx="30" cy="9" r="7" fill="#3a3a3c"/><rect x="21" y="17" width="18" height="30" rx="5" fill="'+(g==='schiena'?'#4f8':'#3a3a3c')+'"/><rect x="23" y="19" width="14" height="9" rx="3" fill="'+f('petto')+'"/><rect x="24" y="30" width="12" height="12" rx="3" fill="'+f('addome')+'"/><circle cx="19" cy="19" r="4" fill="'+f('spalle')+'"/><circle cx="41" cy="19" r="4" fill="'+f('spalle')+'"/><rect x="9" y="18" width="7" height="14" rx="3" fill="'+arm+'"/><rect x="44" y="18" width="7" height="14" rx="3" fill="'+arm+'"/><rect x="9" y="33" width="7" height="12" rx="3" fill="#3a3a3c"/><rect x="44" y="33" width="7" height="12" rx="3" fill="#3a3a3c"/><rect x="22" y="49" width="7" height="22" rx="3" fill="'+f('gambe')+'"/><rect x="31" y="49" width="7" height="22" rx="3" fill="'+f('gambe')+'"/><rect x="22" y="73" width="7" height="14" rx="3" fill="'+f('polpacci')+'"/><rect x="31" y="73" width="7" height="14" rx="3" fill="'+f('polpacci')+'"/></svg>'}
-const exImg=e=>e.photo?'<img class="eximg" src="'+e.photo+'">':bodySVG(e.g);
+const exImg=e=>e.photo?'<img class="eximg" src="'+e.photo+'">':figSVG(e.f||GP[e.g]||'stand');
 $$('.tab').forEach(b=>b.onclick=()=>tab(b.dataset.t));
 function tab(t){$$('.view').forEach(v=>v.hidden=v.id!=='v-'+t);$$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));({oggi:rOggi,schede:rSchede,storico:rStorico,archivio:rArch,extra:rExtra})[t]()}
 function svgLine(vals){if(vals.length<2)return'<p class="mut">Servono almeno 2 valori.</p>';const W=300,H=70,mx=Math.max(...vals),mn=Math.min(...vals);const X=i=>8+i*(W-16)/(vals.length-1),Y=v=>H-8-((v-mn)/((mx-mn)||1))*(H-16);return'<svg class="chart" viewBox="0 0 '+W+' '+H+'"><polyline fill="none" stroke="#4f8" stroke-width="2" points="'+vals.map((v,i)=>X(i)+','+Y(v)).join(' ')+'"/></svg>'}
-
 function rOggi(){
   const el=$('#areaOggi');
   if(!ACT){el.innerHTML='<p class="mut">Scegli la scheda da allenare:</p>'+(S.routines.length?S.routines.map(r=>'<button class="card" style="width:100%" onclick="startS(\''+r.id+'\')">▶ '+esc(r.name)+'</button>').join(''):'<p class="mut">Crea prima una scheda nella tab Schede.</p>');return}
   const e=ACT.ex[ACT.i];
   const curSet=e.done.length+1;
   const isLast=curSet>=e.sets;
-  
   const doneHtml=e.done.length?'<div class="mut" style="margin-top:10px">✅ Serie completate:</div>'+e.done.map((s,idx)=>'<div class="set ok">Serie '+(idx+1)+': '+s.weight+' kg × '+s.reps+' rip</div>').join(''):'';
   const nextHtml=!isLast?'<div class="nextSet">➡ Prossima: Serie '+(curSet+1)+' di '+e.sets+(e.tempo?' · Esecuzione: '+e.tempo+'s':'')+'</div>':'<div class="nextSet last">🏁 Ultima serie di questo esercizio!</div>';
-  
-  const queueHtml='<div class="card"><b>📋 Lista Scheda: '+esc(ACT.name)+'</b>'+ACT.ex.map((ex,idx)=>{
+  const queueHtml='<div class="card"><b>📋 Scheda: '+esc(ACT.name)+'</b>'+ACT.ex.map((ex,idx)=>{
     const isDone=idx<ACT.i||(idx===ACT.i&&ex.done.length>=ex.sets);
     const isCur=idx===ACT.i&&!isDone;
-    return '<div class="qItem '+(isCur?'cur':'')+(isDone?' dn':'')+'"><span>'+(isDone?'✅':(isCur?'▶':'⏳'))+' '+esc(ex.n)+'</span><span class="mut">'+(isDone?ex.done.length:0)+'/'+ex.sets+' serie</span></div>';
+    return '<div class="qItem '+(isCur?'cur':'')+(isDone?' dn':'')+'"><span>'+(isDone?'✅':(isCur?'▶':'⏳'))+' '+esc(ex.n)+'<br><span class="mut">'+ex.sets+'×'+ex.reps+' @ '+ex.weight+' kg · Riposo '+ex.rest+'s</span></span><span class="mut">'+(isDone?ex.done.length:0)+'/'+ex.sets+'</span></div>';
   }).join('')+'</div>';
-
   const mainCard='<div class="card"><div class="row"><b>Scheda: '+esc(ACT.name)+'</b><span class="mut">Esercizio '+(ACT.i+1)+'/'+ACT.ex.length+'</span></div>'+
-  '<div class="flex" style="margin-top:8px">'+exImg(e)+'<div><b>'+esc(e.n)+'</b><div class="mut">Gruppo: '+e.g+'</div></div></div>'+
+  '<div class="flex" style="margin-top:8px">'+exImg(e)+'<div><b>'+esc(e.n)+'</b> <a href="'+vid(e.n)+'" target="_blank">🎬</a><div class="mut">'+esc(e.d||'')+'</div></div></div>'+
   '<div class="setInd">Serie '+curSet+' di '+e.sets+(e.tempo?' <span class="mut" style="font-size:14px">· Esecuzione: '+e.tempo+'s</span>':'')+'</div>'+
   (e.done.length<e.sets?'<div class="row3"><div><label>Carico (kg)</label><input id="w" type="number" step="0.5" value="'+e.weight+'"></div><div><label>Ripetizioni</label><input id="rp" type="number" value="'+e.reps+'"></div></div><div class="row"><button onclick="doSet()" style="flex:1;background:#2c4a3a">✔ Set fatto</button><button onclick="startExec()">▶ Esec.</button><button onclick="toRest()">😮💨 Riposo</button></div>':'<p class="mut" style="text-align:center;margin:10px 0">Esercizio completato ✅</p>')+
   doneHtml+nextHtml+
   '<div class="row" style="margin-top:12px"><button onclick="nav(-1)">← Prec</button><button onclick="nav(1)">Succ →</button><button onclick="endS()" style="flex:1;background:#4a2c2c">Fine Allenamento 💾</button></div></div>';
-
   el.innerHTML=mainCard+queueHtml;
 }
-
 const curEx=()=>ACT.ex[ACT.i];
 function startS(id){const r=S.routines.find(x=>x.id===id);if(!r)return;ACT={name:r.name,ex:r.exercises.map(e=>({...e,done:[]})),i:0};tab('oggi')}
 function nav(d){ACT.i=Math.min(Math.max(ACT.i+d,0),ACT.ex.length-1);rOggi()}
@@ -159,7 +248,7 @@ function closeR(){OPEN=null;rSchede()}
 function rDet(){const r=S.routines.find(x=>x.id===OPEN);if(!r){OPEN=null;return rSchede()}
 $('#schedaList').hidden=true;$('#schedaDet').hidden=false;
 $('#detTitle').textContent='📋 '+r.name;
-$('#detEx').innerHTML=r.exercises.map(e=>'<div class="exrow" id="ex-'+e.id+'"><div class="flex">'+exImg(e)+'<div class="sub" style="flex:1"><b>'+esc(e.n)+'</b> <span class="mut">('+e.g+')</span><br>Serie: '+e.sets+' · Ripetizioni: '+e.reps+'<br>Carico: '+e.weight+' kg · Riposo: '+e.rest+' s'+(e.tempo?'<br>Tempo esecuzione: '+e.tempo+' s':'')+'</div><button onclick="delE(\''+e.id+'\')">🗑</button></div></div>').join('')||'<p class="mut">Nessun esercizio: cercalo e aggiungilo qui sopra.</p>'}
+$('#detEx').innerHTML=r.exercises.map(e=>'<div class="exrow" id="ex-'+e.id+'"><div class="flex">'+exImg(e)+'<div class="sub" style="flex:1"><b>'+esc(e.n)+'</b> <span class="mut">('+e.g+')</span> <a href="'+vid(e.n)+'" target="_blank">🎬</a><br><span class="mut">'+esc(e.d||'')+'</span><br>Serie: '+e.sets+' · Ripetizioni: '+e.reps+' · Carico: '+e.weight+' kg<br>Riposo: '+e.rest+' s'+(e.tempo?' · Tempo: '+e.tempo+' s':'')+'</div><button onclick="delE(\''+e.id+'\')">🗑</button></div></div>').join('')||'<p class="mut">Nessun esercizio: cercalo e aggiungilo qui sopra.</p>'}
 function addR(){const n=$('#newR').value.trim();if(!n)return;const id=uid();S.routines.push({id,name:n,exercises:[]});$('#newR').value='';OPEN=id;save();rSchede()}
 function delR(id){if(!confirm('Eliminare la scheda?'))return;S.routines=S.routines.filter(r=>r.id!==id);if(OPEN===id)OPEN=null;save();rSchede()}
 function delE(eid){const r=S.routines.find(x=>x.id===OPEN);r.exercises=r.exercises.filter(e=>e.id!==eid);save();rSchede()}
@@ -170,7 +259,7 @@ function pickEx(i){$('#exN').value=SG[i].n;$('#suggList').innerHTML=''}
 function addE(){const r=S.routines.find(x=>x.id===OPEN);if(!r)return;const n=$('#exN').value.trim();if(!n)return alert('Scrivi o scegli un esercizio');
 const b=allEx().find(e=>e.n.toLowerCase()===n.toLowerCase());
 const id=uid();
-r.exercises.push({id,n:b?b.n:n,g:b?b.g:'altro',sets:+$('#exS').value||3,reps:+$('#exP').value||8,weight:+$('#exW').value||20,rest:+$('#exRe').value||90,tempo:+$('#exT').value||0});
+r.exercises.push({id,n:b?b.n:n,g:b?b.g:'altro',f:b?b.f:'',d:b?b.d:'',sets:+$('#exS').value||3,reps:+$('#exP').value||8,weight:+$('#exW').value||20,rest:+$('#exRe').value||90,tempo:+$('#exT').value||0});
 $('#exN').value='';$('#suggList').innerHTML='';save();rSchede();
 const el=$('#ex-'+id);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.background='#1e3a2a';setTimeout(()=>el.style.background='',1000)}}
 function rStorico(){$('#listStorico').innerHTML=[...S.sessions].reverse().map(s=>{const vol=s.entries.reduce((a,e)=>a+e.sets.reduce((b,x)=>b+x.weight*x.reps,0),0);
@@ -179,11 +268,11 @@ const names=[...new Set(S.sessions.flatMap(s=>s.entries.map(e=>e.name)))];$('#se
 function drawChart(){const n=$('#selEx').value;if(!n){$('#chart').innerHTML='';return}
 const vals=S.sessions.filter(s=>s.entries.some(e=>e.name===n)).map(s=>Math.max(...s.entries.filter(e=>e.name===n).flatMap(e=>e.sets.map(x=>x.weight))));
 $('#chart').innerHTML=svgLine(vals)+(vals.length?'<p class="mut">Carico max attuale: '+Math.max(...vals)+' kg</p>':'')}
-function rArch(){const q=($('#q').value||'').toLowerCase();
-const list=allEx().filter(e=>!q||e.n.toLowerCase().includes(q)||e.g.includes(q)||(e.d||'').toLowerCase().includes(q));
-$('#listArch').innerHTML=list.map(e=>'<details class="card"><summary class="flex">'+exImg(e)+'<span><b>'+esc(e.n)+'</b><br><span class="mut">Gruppo: '+e.g+'</span></span></summary><p class="sub">'+esc(e.d||'Nessuna descrizione. Aggiungi tu come si esegue.')+'</p>'+(e.video?'<a href="'+esc(e.video)+'" target="_blank">🎬 Guarda video</a>':'')+'</details>').join('')||'<p class="mut">Nessun risultato.</p>'}
+function rArch(){const q=($('#q').value||'').toLowerCase();const fg=$('#fg').value;
+const list=allEx().filter(e=>(!fg||e.g===fg)&&(!q||e.n.toLowerCase().includes(q)||e.g.includes(q)||(e.d||'').toLowerCase().includes(q)));
+$('#listArch').innerHTML=list.map(e=>'<div class="card"><div class="flex">'+exImg(e)+'<div class="sub" style="flex:1"><b>'+esc(e.n)+'</b> <span class="mut">('+e.g+')</span><br>'+esc(e.d||'Nessuna descrizione.')+'<br><a href="'+(e.video||vid(e.n))+'" target="_blank">🎬 Guarda video</a></div></div></div>').join('')||'<p class="mut">Nessun risultato.</p>'}
 function saveEx(){const n=$('#nxN').value.trim();if(!n)return alert('Nome obbligatorio');
-const push=photo=>{S.custom.push({n,g:$('#nxG').value,d:$('#nxD').value,video:$('#nxV').value.trim(),photo:photo||''});save();['nxN','nxD','nxV'].forEach(i=>$('#'+i).value='');$('#nxF').value='';$('#newExForm').hidden=true;rArch();alert('Esercizio salvato!')};
+const push=photo=>{S.custom.push({n,g:$('#nxG').value,d:$('#nxD').value,video:$('#nxV').value.trim(),photo:photo||'',f:''});save();['nxN','nxD','nxV'].forEach(i=>$('#'+i).value='');$('#nxF').value='';$('#newExForm').hidden=true;rArch();alert('Esercizio salvato!')};
 const f=$('#nxF').files[0];if(f){const img=new Image();img.onload=()=>{const c=document.createElement('canvas');const s=400/Math.max(img.width,img.height);c.width=img.width*s;c.height=img.height*s;c.getContext('2d').drawImage(img,0,0,c.width,c.height);push(c.toDataURL('image/jpeg',.7))};img.src=URL.createObjectURL(f)}else push('')}
 function rExtra(){rBody()}
 function rBody(){$('#listBody').innerHTML=[...S.body].reverse().slice(0,10).map(b=>'<span class="chip">'+fmt(b.date)+' · '+b.weight+' kg</span>').join('');$('#bodyChart').innerHTML=svgLine(S.body.slice(-12).map(b=>b.weight))}
