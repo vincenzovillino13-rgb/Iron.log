@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#111111">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Iron Log</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font:16px -apple-system,sans-serif;background:#111;color:#eee;padding-bottom:80px}
+header{padding:14px 16px;position:sticky;top:0;background:#111;z-index:5}
+h1{font-size:20px;margin:0}
+main{padding:0 12px}
+.card{background:#1d1d1f;border-radius:14px;padding:12px;margin:10px 0}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.row3{display:flex;gap:6px}
+.row3>div{flex:1}
+.flex{display:flex;gap:10px;align-items:center}
+label{display:block;color:#888;font-size:12px;margin:8px 0 2px}
+button{background:#2c2c2e;color:#eee;border:0;border-radius:10px;padding:10px 12px;font-size:14px;margin:4px 2px}
+input,select,textarea{background:#2c2c2e;color:#eee;border:0;border-radius:10px;padding:10px;width:100%;margin:2px 0;font-size:16px}
+textarea{min-height:60px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#1a1a1c;padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+.tab{flex:1;background:none;color:#888;font-size:11px;padding:8px 2px}
+.tab.on{color:#4f8}
+.mut{color:#888;font-size:13px}.sub{color:#bbb;margin:4px 0;font-size:14px}.warn{color:#fa5}
+.eximg{width:42px;height:70px;object-fit:cover;border-radius:8px;background:#161618;flex:none}
+.exrow{padding:6px 0;border-bottom:1px solid #333;border-radius:8px}
+#suggList button{display:flex;gap:8px;align-items:center;width:100%;text-align:left;background:#252527;margin:3px 0}
+#suggList .eximg{width:24px;height:40px}
+.set{margin:4px 0}.set.ok{color:#4f8}
+#timer{position:fixed;top:8px;left:50%;transform:translateX(-50%);background:#4f8;color:#111;border-radius:999px;padding:8px 14px;display:flex;gap:8px;z-index:9;font-weight:700;align-items:center}
+#timer[hidden]{display:none}
+#timer button{background:#0002;color:#111;padding:4px 10px;margin:0}
+.chip{display:inline-block;background:#2c2c2e;border-radius:8px;padding:6px 8px;margin:3px;font-size:13px}
+details summary{font-weight:600}
+svg.chart{width:100%;background:#161618;border-radius:10px}
+hr{border:0;border-top:1px solid #333;margin:10px 0}
+a{color:#4f8}
+.setInd{background:#252527;padding:12px;border-radius:10px;margin:10px 0;text-align:center;font-size:17px;font-weight:600}
+.nextSet{background:#1e2a1e;color:#4f8;padding:10px;border-radius:8px;margin-top:10px;text-align:center;font-size:14px;font-weight:600}
+.nextSet.last{background:#3a2c1e;color:#fa5}
+.qItem{padding:10px;border-radius:8px;margin:4px 0;background:#252527;display:flex;justify-content:space-between;align-items:center;font-size:15px}
+.qItem.cur{background:#1e3a2a;border:1px solid #4f8;font-weight:600}
+.qItem.dn{opacity:0.6}
+</style>
+</head>
+<body>
+<header><h1>🏋️ Iron Log</h1></header>
+<div id="timer" hidden><span id="tMode"></span><span id="tTxt"></span><button onclick="addT(30)">+30s</button><button onclick="stopT()">✕</button></div>
+<main>
+<section id="v-oggi" class="view"><div id="areaOggi"></div></section>
+
+<section id="v-schede" class="view" hidden>
+ <div id="schedaList">
+  <div class="card"><label>Nome nuova scheda</label><input id="newR" placeholder="es. Lunedì"><button onclick="addR()">+ Crea scheda</button></div>
+  <div id="listSchede"></div>
+ </div>
+ <div id="schedaDet" hidden>
+  <div class="card">
+   <div class="row"><b id="detTitle"></b><button onclick="closeR()">← Indietro</button></div>
+   <div class="row"><button onclick="delR(OPEN)">🗑 Elimina scheda</button><button onclick="startS(OPEN)">▶ Allenati</button></div>
+   <hr>
+   <label>Cerca esercizio (scrivi: petto, panca, calf…)</label><input id="exN" placeholder="es. petto" oninput="sugg()" autocomplete="off"><div id="suggList"></div>
+   <div class="row3"><div><label>Serie</label><input id="exS" type="number" value="3"></div><div><label>Ripetizioni</label><input id="exP" type="number" value="8"></div><div><label>Carico (kg)</label><input id="exW" type="number" step="0.5" value="20"></div></div>
+   <div class="row3"><div><label>Riposo (sec)</label><input id="exRe" type="number" value="90"></div><div><label>Tempo esecuzione (sec)</label><input id="exT" type="number" value="0"></div></div>
+   <button onclick="addE()">+ Aggiungi esercizio</button>
+   <hr>
+   <b>Esercizi nella scheda:</b>
+   <div id="detEx"></div>
+  </div>
+ </div>
+</section>
+
+<section id="v-storico" class="view" hidden>
+ <div class="card"><b>Progressione carichi</b><label>Esercizio</label><select id="selEx" onchange="drawChart()"></select><div id="chart"></div></div>
+ <div id="listStorico"></div>
+</section>
+
+<section id="v-archivio" class="view" hidden>
+ <div class="card"><label>Cerca esercizio o macchina</label><input id="q" placeholder="es. panca, calf, petto…" oninput="rArch()">
+ <button onclick="tog('newExForm')">📷 Nuovo esercizio con foto</button>
+ <div id="newExForm" hidden><label>Nome esercizio / macchina</label><input id="nxN"><label>Gruppo muscolare</label><select id="nxG"><option>petto</option><option>schiena</option><option>spalle</option><option>bicipiti</option><option>tricipiti</option><option>gambe</option><option>polpacci</option><option>addome</option><option>altro</option></select><label>Come si esegue (testo)</label><textarea id="nxD"></textarea><label>Video (link, opzionale)</label><input id="nxV" placeholder="https://…"><label>Foto della macchina</label><input id="nxF" type="file" accept="image/*" capture="environment"><button onclick="saveEx()">💾 Salva</button></div></div>
+ <div id="listArch"></div>
+</section>
+
+<section id="v-extra" class="view" hidden>
+ <div class="card"><b>Peso corporeo</b><div class="row"><div style="flex:1"><label>Peso (kg)</label><input id="bw" type="number" step="0.1"></div><button onclick="addB()">+</button></div><div id="bodyChart"></div><div id="listBody"></div></div>
+ <div class="card"><b>Calcolatore piastre</b> <span class="mut">(bilanciere 20 kg)</span><div class="row"><div style="flex:1"><label>Totale (kg)</label><input id="pt" type="number" step="0.5"></div><button onclick="calcP()">=</button></div><div id="plates"></div></div>
+ <div class="card"><b>Backup</b><div class="row"><button onclick="exp()">⬇ Esporta</button><button onclick="fi.click()">⬆ Importa</button><input id="fi" type="file" hidden onchange="imp(this.files[0])"></div></div>
+</section>
+</main>
+<nav>
+ <button class="tab on" data-t="oggi">Allenati</button>
+ <button class="tab" data-t="schede">Schede</button>
+ <button class="tab" data-t="storico">Storico</button>
+ <button class="tab" data-t="archivio">Archivio</button>
+ <button class="tab" data-t="extra">Extra</button>
+</nav>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const KEY='ironlog3';let S=load(),ACT=null,OPEN=null,T=null,TL=0,MODE='',SG=[];
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.routines){d.custom=d.custom||[];return d}}catch(e){}return{routines:[],sessions:[],body:[],custom:[]}}
+function save(){localStorage.setItem(KEY,JSON.stringify(S))}
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const esc=s=>String(s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const fmtS=s=>Math.floor(Math.max(s,0)/60)+':'+String(Math.max(s,0)%60).padStart(2,'0');
+const fmt=d=>new Date(d).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'})+' '+new Date(d).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+const tog=id=>{$('#'+id).hidden=!$('#'+id).hidden};
+const EX_DB=[["Panca piana","petto","Sdraiato su panca, bilanciere al petto, spingi fino a braccia tese."],["Panca inclinata manubri","petto","Panca a 30°, manubri al petto, spingi verso l'alto."],["Croci ai cavi","petto","Braccia aperte, chiudi verso il centro."],["Piegamenti","petto","Mani a terra, scendi col petto, risali."],["Lat machine","schiena","Seduto, tira la sbarra verso il petto."],["Rematore bilanciere","schiena","Busto flesso, tira il bilanciere all'addome."],["Trazioni","schiena","Appeso alla sbarra, tira fino al mento."],["Pulley","schiena","Seduto, tira la maniglia all'addome."],["Military press","spalle","Bilanciere dalle spalle sopra la testa."],["Alzate laterali","spalle","Manubri ai fianchi, sali a braccia tese."],["Alzate posteriori","spalle","Busto flesso, apri le braccia."],["Curl manubri","bicipiti","Gomiti fermi, piega le braccia."],["Curl bilanciere","bicipiti","Bilanciere, gomiti fermi, piega."],["Martelli","bicipiti","Presa neutra, piega le braccia."],["French press","tricipiti","Gomiti alti, estendi le braccia."],["Push down","tricipiti","Al cavo, spingi verso il basso."],["Dip","tricipiti","Scendi e risali alle parallele."],["Squat","gambe","Bilanciere sulle spalle, scendi come seduto."],["Pressa","gambe","Piedi sulla pedana, piega e spingi."],["Affondi","gambe","Passo avanti, scendi col ginocchio."],["Stacchi rumeni","gambe","Bilanciere lungo le gambe, busto avanti."],["Calf in piedi","polpacci","Sali sulle punte."],["Calf seduto","polpacci","Seduto, spingi sulle punte."],["Crunch","addome","Solleva le spalle da terra."],["Leg raise","addome","Solleva le gambe tese."],["Plank","addome","Gomiti a terra, corpo dritto."]].map(a=>({n:a[0],g:a[1],d:a[2]}));
+const allEx=()=>EX_DB.concat(S.custom);
+function bodySVG(g){const f=x=>x===g?'#4f8':'#3a3a3c';const arm=(g==='bicipiti'||g==='tricipiti')?'#4f8':'#3a3a3c';
+return '<svg class="eximg" viewBox="0 0 60 100"><circle cx="30" cy="9" r="7" fill="#3a3a3c"/><rect x="21" y="17" width="18" height="30" rx="5" fill="'+(g==='schiena'?'#4f8':'#3a3a3c')+'"/><rect x="23" y="19" width="14" height="9" rx="3" fill="'+f('petto')+'"/><rect x="24" y="30" width="12" height="12" rx="3" fill="'+f('addome')+'"/><circle cx="19" cy="19" r="4" fill="'+f('spalle')+'"/><circle cx="41" cy="19" r="4" fill="'+f('spalle')+'"/><rect x="9" y="18" width="7" height="14" rx="3" fill="'+arm+'"/><rect x="44" y="18" width="7" height="14" rx="3" fill="'+arm+'"/><rect x="9" y="33" width="7" height="12" rx="3" fill="#3a3a3c"/><rect x="44" y="33" width="7" height="12" rx="3" fill="#3a3a3c"/><rect x="22" y="49" width="7" height="22" rx="3" fill="'+f('gambe')+'"/><rect x="31" y="49" width="7" height="22" rx="3" fill="'+f('gambe')+'"/><rect x="22" y="73" width="7" height="14" rx="3" fill="'+f('polpacci')+'"/><rect x="31" y="73" width="7" height="14" rx="3" fill="'+f('polpacci')+'"/></svg>'}
+const exImg=e=>e.photo?'<img class="eximg" src="'+e.photo+'">':bodySVG(e.g);
+$$('.tab').forEach(b=>b.onclick=()=>tab(b.dataset.t));
+function tab(t){$$('.view').forEach(v=>v.hidden=v.id!=='v-'+t);$$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));({oggi:rOggi,schede:rSchede,storico:rStorico,archivio:rArch,extra:rExtra})[t]()}
+function svgLine(vals){if(vals.length<2)return'<p class="mut">Servono almeno 2 valori.</p>';const W=300,H=70,mx=Math.max(...vals),mn=Math.min(...vals);const X=i=>8+i*(W-16)/(vals.length-1),Y=v=>H-8-((v-mn)/((mx-mn)||1))*(H-16);return'<svg class="chart" viewBox="0 0 '+W+' '+H+'"><polyline fill="none" stroke="#4f8" stroke-width="2" points="'+vals.map((v,i)=>X(i)+','+Y(v)).join(' ')+'"/></svg>'}
+
+function rOggi(){
+  const el=$('#areaOggi');
+  if(!ACT){el.innerHTML='<p class="mut">Scegli la scheda da allenare:</p>'+(S.routines.length?S.routines.map(r=>'<button class="card" style="width:100%" onclick="startS(\''+r.id+'\')">▶ '+esc(r.name)+'</button>').join(''):'<p class="mut">Crea prima una scheda nella tab Schede.</p>');return}
+  const e=ACT.ex[ACT.i];
+  const curSet=e.done.length+1;
+  const isLast=curSet>=e.sets;
+  
+  const doneHtml=e.done.length?'<div class="mut" style="margin-top:10px">✅ Serie completate:</div>'+e.done.map((s,idx)=>'<div class="set ok">Serie '+(idx+1)+': '+s.weight+' kg × '+s.reps+' rip</div>').join(''):'';
+  const nextHtml=!isLast?'<div class="nextSet">➡ Prossima: Serie '+(curSet+1)+' di '+e.sets+(e.tempo?' · Esecuzione: '+e.tempo+'s':'')+'</div>':'<div class="nextSet last">🏁 Ultima serie di questo esercizio!</div>';
+  
+  const queueHtml='<div class="card"><b>📋 Lista Scheda: '+esc(ACT.name)+'</b>'+ACT.ex.map((ex,idx)=>{
+    const isDone=idx<ACT.i||(idx===ACT.i&&ex.done.length>=ex.sets);
+    const isCur=idx===ACT.i&&!isDone;
+    return '<div class="qItem '+(isCur?'cur':'')+(isDone?' dn':'')+'"><span>'+(isDone?'✅':(isCur?'▶':'⏳'))+' '+esc(ex.n)+'</span><span class="mut">'+(isDone?ex.done.length:0)+'/'+ex.sets+' serie</span></div>';
+  }).join('')+'</div>';
+
+  const mainCard='<div class="card"><div class="row"><b>Scheda: '+esc(ACT.name)+'</b><span class="mut">Esercizio '+(ACT.i+1)+'/'+ACT.ex.length+'</span></div>'+
+  '<div class="flex" style="margin-top:8px">'+exImg(e)+'<div><b>'+esc(e.n)+'</b><div class="mut">Gruppo: '+e.g+'</div></div></div>'+
+  '<div class="setInd">Serie '+curSet+' di '+e.sets+(e.tempo?' <span class="mut" style="font-size:14px">· Esecuzione: '+e.tempo+'s</span>':'')+'</div>'+
+  (e.done.length<e.sets?'<div class="row3"><div><label>Carico (kg)</label><input id="w" type="number" step="0.5" value="'+e.weight+'"></div><div><label>Ripetizioni</label><input id="rp" type="number" value="'+e.reps+'"></div></div><div class="row"><button onclick="doSet()" style="flex:1;background:#2c4a3a">✔ Set fatto</button><button onclick="startExec()">▶ Esec.</button><button onclick="toRest()">😮💨 Riposo</button></div>':'<p class="mut" style="text-align:center;margin:10px 0">Esercizio completato ✅</p>')+
+  doneHtml+nextHtml+
+  '<div class="row" style="margin-top:12px"><button onclick="nav(-1)">← Prec</button><button onclick="nav(1)">Succ →</button><button onclick="endS()" style="flex:1;background:#4a2c2c">Fine Allenamento 💾</button></div></div>';
+
+  el.innerHTML=mainCard+queueHtml;
+}
+
+const curEx=()=>ACT.ex[ACT.i];
+function startS(id){const r=S.routines.find(x=>x.id===id);if(!r)return;ACT={name:r.name,ex:r.exercises.map(e=>({...e,done:[]})),i:0};tab('oggi')}
+function nav(d){ACT.i=Math.min(Math.max(ACT.i+d,0),ACT.ex.length-1);rOggi()}
+function doSet(){const e=curEx();e.done.push({weight:+$('#w').value,reps:+$('#rp').value});if(e.done.length>=e.sets&&ACT.i<ACT.ex.length-1)ACT.i++;rOggi();toRest()}
+function toRest(){stopT();startRest(+curEx().rest||90)}
+function endS(){if(!ACT)return;if(!confirm('Terminare e salvare l\'allenamento?'))return;const name=ACT.name;const entries=ACT.ex.filter(e=>e.done.length).map(e=>({name:e.n,sets:e.done}));ACT=null;if(entries.length){S.sessions.push({id:uid(),date:new Date().toISOString(),routine:name,entries});save();tab('storico')}else rOggi()}
+function rSchede(){if(OPEN){rDet();return}
+$('#schedaList').hidden=false;$('#schedaDet').hidden=true;
+$('#listSchede').innerHTML=S.routines.map(r=>'<div class="card"><div class="row"><b>📋 '+esc(r.name)+'</b><span class="mut">'+r.exercises.length+' esercizi</span></div><div class="row"><button onclick="openR(\''+r.id+'\')">✏ Apri / Modifica</button><button onclick="startS(\''+r.id+'\')">▶ Allenati</button><button onclick="delR(\''+r.id+'\')">🗑 Elimina</button></div></div>').join('')||'<p class="mut">Nessuna scheda. Creane una qui sopra.</p>'}
+function openR(id){OPEN=id;rSchede()}
+function closeR(){OPEN=null;rSchede()}
+function rDet(){const r=S.routines.find(x=>x.id===OPEN);if(!r){OPEN=null;return rSchede()}
+$('#schedaList').hidden=true;$('#schedaDet').hidden=false;
+$('#detTitle').textContent='📋 '+r.name;
+$('#detEx').innerHTML=r.exercises.map(e=>'<div class="exrow" id="ex-'+e.id+'"><div class="flex">'+exImg(e)+'<div class="sub" style="flex:1"><b>'+esc(e.n)+'</b> <span class="mut">('+e.g+')</span><br>Serie: '+e.sets+' · Ripetizioni: '+e.reps+'<br>Carico: '+e.weight+' kg · Riposo: '+e.rest+' s'+(e.tempo?'<br>Tempo esecuzione: '+e.tempo+' s':'')+'</div><button onclick="delE(\''+e.id+'\')">🗑</button></div></div>').join('')||'<p class="mut">Nessun esercizio: cercalo e aggiungilo qui sopra.</p>'}
+function addR(){const n=$('#newR').value.trim();if(!n)return;const id=uid();S.routines.push({id,name:n,exercises:[]});$('#newR').value='';OPEN=id;save();rSchede()}
+function delR(id){if(!confirm('Eliminare la scheda?'))return;S.routines=S.routines.filter(r=>r.id!==id);if(OPEN===id)OPEN=null;save();rSchede()}
+function delE(eid){const r=S.routines.find(x=>x.id===OPEN);r.exercises=r.exercises.filter(e=>e.id!==eid);save();rSchede()}
+function sugg(){const q=$('#exN').value.toLowerCase().trim();const el=$('#suggList');if(!q){el.innerHTML='';return}
+SG=allEx().filter(e=>e.n.toLowerCase().includes(q)||e.g.includes(q)).slice(0,6);
+el.innerHTML=SG.map((e,i)=>'<button onclick="pickEx('+i+')">'+exImg(e)+'<span>'+esc(e.n)+' <span class="mut">· '+e.g+'</span></span></button>').join('')}
+function pickEx(i){$('#exN').value=SG[i].n;$('#suggList').innerHTML=''}
+function addE(){const r=S.routines.find(x=>x.id===OPEN);if(!r)return;const n=$('#exN').value.trim();if(!n)return alert('Scrivi o scegli un esercizio');
+const b=allEx().find(e=>e.n.toLowerCase()===n.toLowerCase());
+const id=uid();
+r.exercises.push({id,n:b?b.n:n,g:b?b.g:'altro',sets:+$('#exS').value||3,reps:+$('#exP').value||8,weight:+$('#exW').value||20,rest:+$('#exRe').value||90,tempo:+$('#exT').value||0});
+$('#exN').value='';$('#suggList').innerHTML='';save();rSchede();
+const el=$('#ex-'+id);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.background='#1e3a2a';setTimeout(()=>el.style.background='',1000)}}
+function rStorico(){$('#listStorico').innerHTML=[...S.sessions].reverse().map(s=>{const vol=s.entries.reduce((a,e)=>a+e.sets.reduce((b,x)=>b+x.weight*x.reps,0),0);
+return '<details class="card"><summary>'+fmt(s.date)+' — '+esc(s.routine)+' <span class="mut">· Volume: '+Math.round(vol)+' kg</span></summary>'+s.entries.map(e=>'<div class="sub"><b>'+esc(e.name)+'</b>: '+e.sets.map(x=>x.weight+' kg × '+x.reps).join(', ')+'</div>').join('')+'</details>'}).join('')||'<p class="mut">Nessun allenamento.</p>';
+const names=[...new Set(S.sessions.flatMap(s=>s.entries.map(e=>e.name)))];$('#selEx').innerHTML=names.map(n=>'<option>'+esc(n)+'</option>').join('');drawChart()}
+function drawChart(){const n=$('#selEx').value;if(!n){$('#chart').innerHTML='';return}
+const vals=S.sessions.filter(s=>s.entries.some(e=>e.name===n)).map(s=>Math.max(...s.entries.filter(e=>e.name===n).flatMap(e=>e.sets.map(x=>x.weight))));
+$('#chart').innerHTML=svgLine(vals)+(vals.length?'<p class="mut">Carico max attuale: '+Math.max(...vals)+' kg</p>':'')}
+function rArch(){const q=($('#q').value||'').toLowerCase();
+const list=allEx().filter(e=>!q||e.n.toLowerCase().includes(q)||e.g.includes(q)||(e.d||'').toLowerCase().includes(q));
+$('#listArch').innerHTML=list.map(e=>'<details class="card"><summary class="flex">'+exImg(e)+'<span><b>'+esc(e.n)+'</b><br><span class="mut">Gruppo: '+e.g+'</span></span></summary><p class="sub">'+esc(e.d||'Nessuna descrizione. Aggiungi tu come si esegue.')+'</p>'+(e.video?'<a href="'+esc(e.video)+'" target="_blank">🎬 Guarda video</a>':'')+'</details>').join('')||'<p class="mut">Nessun risultato.</p>'}
+function saveEx(){const n=$('#nxN').value.trim();if(!n)return alert('Nome obbligatorio');
+const push=photo=>{S.custom.push({n,g:$('#nxG').value,d:$('#nxD').value,video:$('#nxV').value.trim(),photo:photo||''});save();['nxN','nxD','nxV'].forEach(i=>$('#'+i).value='');$('#nxF').value='';$('#newExForm').hidden=true;rArch();alert('Esercizio salvato!')};
+const f=$('#nxF').files[0];if(f){const img=new Image();img.onload=()=>{const c=document.createElement('canvas');const s=400/Math.max(img.width,img.height);c.width=img.width*s;c.height=img.height*s;c.getContext('2d').drawImage(img,0,0,c.width,c.height);push(c.toDataURL('image/jpeg',.7))};img.src=URL.createObjectURL(f)}else push('')}
+function rExtra(){rBody()}
+function rBody(){$('#listBody').innerHTML=[...S.body].reverse().slice(0,10).map(b=>'<span class="chip">'+fmt(b.date)+' · '+b.weight+' kg</span>').join('');$('#bodyChart').innerHTML=svgLine(S.body.slice(-12).map(b=>b.weight))}
+function addB(){const w=+$('#bw').value;if(!w)return;S.body.push({date:new Date().toISOString(),weight:w});$('#bw').value='';save();rBody()}
+function calcP(){const t=+$('#pt').value||0;let per=(t-20)/2;const out=$('#plates');
+if(per<0){out.innerHTML='<p class="mut">Sotto 20 kg: solo bilanciere.</p>';return}
+const used=[];for(const s of[25,20,15,10,5,2.5,1.25])while(per>=s-0.001){used.push(s);per-=s}
+out.innerHTML=per>0.001?'<p class="warn">Restano '+per.toFixed(2)+' kg/lato non componibili</p>':'<p style="color:#4f8">Per lato metti: '+(used.length?used.join(' + '):'niente (solo bilanciere)')+'</p>'}
+function exp(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));a.download='ironlog-backup.json';a.click()}
+function imp(f){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.routines)throw 0;d.custom=d.custom||[];S=d;save();tab('extra');alert('Backup importato!')}catch(e){alert('File non valido')}};r.readAsText(f)}
+function startRest(s){MODE='😮 RIPOSO';TL=s;runT(false)}
+function startExec(){MODE='▶ ESECUZIONE';TL=0;runT(true)}
+function runT(up){clearInterval(T);$('#timer').hidden=false;showT();T=setInterval(()=>{TL+=up?1:-1;showT();if(!up&&TL<=0){stopT();navigator.vibrate&&navigator.vibrate([400,150,400])}},1000)}
+function showT(){$('#tMode').textContent=MODE;$('#tTxt').textContent=fmtS(TL)}
+function addT(s){TL+=s;showT()}
+function stopT(){clearInterval(T);T=null;$('#timer').hidden=true}
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
+tab('oggi');
+</script>
+</body>
+</html>
